@@ -56,7 +56,6 @@ class Common(object):
             # 如果无参数，访问方式如下
             # 返回request的Response结果，类型为requests的Response类型
             res = requests.put(url)
-
         return res
 
         def delete(self, uri, params=None):

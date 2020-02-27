@@ -41,8 +41,6 @@ def login():
 def selectEq():
     msEquipmentid = request.POST.get('equipmentid')
     ssSession = request.environ.get('beaker.session')
-    # print 'msEquipmentid:'+msEquipmentid
-    # print 'ssSession:'+ssSession
     if msEquipmentid is not None:
         if str(msEquipmentid).isdigit():
             ssSession['equipmentid'] = msEquipmentid
@@ -55,11 +53,8 @@ def selectEq():
 @app.post('/kill')
 def kill():
     sEnemyid = request.POST.get('enemyid')
-    # print 'sEnemyid'+sEnemyid
     msEquipmentid = request.POST.get('equipmentid')
     coockies = request.get_cookie("account", secret='some-secret-key')
-    # print sEnemyid
-    # print msEquipmentid
     if sEnemyid is None:
         return 'Error 9904: Your kill yourself!!'
     if msEquipmentid is None:

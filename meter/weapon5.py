@@ -266,8 +266,7 @@ if __name__ == "__main__":
     # 定义存储参数的excel文件路径
     searchparamfile = curPath+'/equipmentid_param.xls'
     # 调用参数类完成参数读取，返回是一个字典，包含全部的excel数据除去excel的第一行表头说明
-    searchparam_dict = ParamFactory().chooseParam(
-        'xls', {'file': searchparamfile, 'sheet': 0}).paramAlllineDict()
+    searchparam_dict = ParamFactory().chooseParam('xls', {'file': searchparamfile, 'sheet': 0}).paramAlllineDict()
     print(searchparam_dict)
     i = 0
     while i < len(searchparam_dict):
