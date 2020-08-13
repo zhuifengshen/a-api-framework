@@ -120,18 +120,33 @@ class Param(object):
         self.paramConf = json.loads(paramConf)
 
     def paramRowsCount(self):
+        """
+        获取参数行数
+        """
         pass
 
     def paramColsCount(self):
+        """
+        获取参数列数
+        """
         pass
 
     def paramHeader(self):
+        """
+        获取参数名列表
+        """
         pass
 
     def paramAllline(self):
+        """
+        获取全部参数，返回格式为列表
+        """
         pass
 
     def paramAlllineDict(self):
+        """
+        获取全部参数，返回格式为字典
+        """
         pass
 
 
@@ -141,13 +156,13 @@ class XLS(Param):
 
     第一行是参数的注释,就是每一行参数是什么
     第二行是参数名,参数名和对应模块的po页面的变量名一致
-    第3~N行是参数
+    第3~N行是用例数据
     最后一列是预期,默认头Exp
     '''
 
     def __init__(self, paramConf):
         '''
-        :param paramConf: xls 文件位置(绝对路径)
+        :param paramConf: 数据配置信息（xls文件位置-绝对路径和指定的sheet），例如：{'file': path_to_file.xls, 'sheet': 0}
         '''
         self.paramConf = paramConf
         self.paramfile = self.paramConf['file']
@@ -204,9 +219,9 @@ class XLS(Param):
 
     def paramAlllineDict(self):
         '''
-        获取全部参数
+        获取全部参数，返回格式为字典
         :return: {{}},其中dict的key值是header的值
-        
+
         example:
         {
         0: {'equipmentid': 10001.0, 'exp': 'your pick up equipmentid:10001'}, 
@@ -224,7 +239,8 @@ class XLS(Param):
             ParamOneLinelist = self.getOneline(iRowStep)
             ParamOnelineDict = {}
             while iColStep < nCountCols:
-                ParamOnelineDict[ParamHeader[iColStep]] = ParamOneLinelist[iColStep]
+                ParamOnelineDict[ParamHeader[iColStep]
+                                 ] = ParamOneLinelist[iColStep]
                 iColStep = iColStep+1
             iColStep = 0
             ParamAllListDict[iRowStep-2] = ParamOnelineDict
@@ -233,7 +249,7 @@ class XLS(Param):
 
     def paramAllline(self):
         '''
-        获取全部参数
+        获取全部参数，返回格式为列表
         :return: 全部参数[[]]
         '''
         nCountRows = self.paramRowsCount()
@@ -264,9 +280,10 @@ if __name__ == "__main__":
     # 获取当前路径绝对值
     curPath = os.path.abspath('.')
     # 定义存储参数的excel文件路径
-    searchparamfile = curPath+'/equipmentid_param.xls'
+    searchparamfile = curPath+'/meter/equipmentid_param.xls'
     # 调用参数类完成参数读取，返回是一个字典，包含全部的excel数据除去excel的第一行表头说明
-    searchparam_dict = ParamFactory().chooseParam('xls', {'file': searchparamfile, 'sheet': 0}).paramAlllineDict()
+    searchparam_dict = ParamFactory().chooseParam(
+        'xls', {'file': searchparamfile, 'sheet': 0}).paramAlllineDict()
     print(searchparam_dict)
     i = 0
     while i < len(searchparam_dict):
