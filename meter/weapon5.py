@@ -116,8 +116,15 @@ class Common(object):
 
 
 class Param(object):
-    def __init__(self, paramConf='{}'):
-        self.paramConf = json.loads(paramConf)
+    """
+    参数化测试数据文件解析工具
+    """
+    def __init__(self, paramConf):
+        """
+        初始化
+        :param paramConf: 数据配置信息（文件路径等）
+        """
+        self.paramConf = paramConf
 
     def paramRowsCount(self):
         """
@@ -137,47 +144,78 @@ class Param(object):
         """
         pass
 
-    def paramAllline(self):
+    def paramDataList(self):
         """
         获取全部参数，返回格式为列表
         """
         pass
 
-    def paramAlllineDict(self):
+    def paramDataDict(self):
         """
         获取全部参数，返回格式为字典
         """
         pass
 
+    def paramDataListDict(self):
+        """
+        获取全部参数，返回格式为列表字典
+        """
+        pass
+
+
+class ParamFactory(object):
+    """
+    参数化测试数据解析工厂
+    """
+    def chooseParam(self, type, paramConf):
+        target = None
+        if type == 'xls':
+            target = XLS(paramConf)
+        elif type == 'csv':
+            target = CSV(paramConf)
+        else:
+            print('暂不支持该文件类型')
+        return target
+
 
 class XLS(Param):
     '''
-    xls基本格式(如果要把xls中存储的数字按照文本读出来的话,纯数字前要加上英文单引号:
+    XLS数据文件解析工具
 
-    第一行是参数的注释,就是每一行参数是什么
-    第二行是参数名,参数名和对应模块的po页面的变量名一致
-    第3~N行是用例数据
-    最后一列是预期,默认头Exp
+    xls文件格式(如果要把xls中存储的数字按照文本读出来的话,纯数字前要加上英文单引号:
+    1、第一行是参数的注释,就是每一行参数是什么；
+    2、第二行是参数名,参数名和对应模块的po页面的变量名一致；
+    3、第3~N行是用例数据；
+    4、最后一列是预期,默认头Exp；
     '''
 
     def __init__(self, paramConf):
         '''
-        :param paramConf: 数据配置信息（xls文件位置-绝对路径和指定的sheet），例如：{'file': path_to_file.xls, 'sheet': 0}
+        初始化
+        :param paramConf: 数据配置信息（文件路径、指定的sheet）
+        例如：
+        1、{'filepath': path_to_file.xls, 'sheet': 0}
+        2、{'filepath': path_to_file.xls, 'sheet': '工作表1'}
         '''
         self.paramConf = paramConf
-        self.paramfile = self.paramConf['file']
-        self.data = xlrd.open_workbook(self.paramfile)
-        self.getParamSheet(self.paramConf['sheet'])
+        self.paramfile = self.paramConf['filepath']
+        self.workbook = xlrd.open_workbook(self.paramfile)
+        self.paramsheet = self.getParamSheet(self.paramConf['sheet'])
 
-    def getParamSheet(self, nsheets):
+    def getParamSheet(self, sheet):
         '''
-        设定参数所处的sheet
-        :param nsheets: 参数在第几个sheet中
-        :return:
+        获取指定的sheet
+        :param sheet: sheet name or sheet index
+        :return: sheet
         '''
-        self.paramsheet = self.data.sheets()[nsheets]
+        if isinstance(sheet, str):
+            return self.workbook.sheet_by_name(sheet)
+        return self.workbook.sheet_by_index(sheet)
 
-    def getOneline(self, nRow):
+    def getOneCell(self, numberRow, numberCol):
+        return self.paramsheet.cell_value(numberRow, numberCol)
+
+    def getOneLine(self, nRow):
         '''
         返回一行数据
         :param nRow: 行数
@@ -215,9 +253,22 @@ class XLS(Param):
         example:
         ['equipmentid', 'exp']
         '''
-        return self.getOneline(1)
+        return self.getOneLine(1)
 
-    def paramAlllineDict(self):
+    def paramDataList(self):
+        '''
+        获取全部参数，返回格式为列表
+        :return: 全部参数[[]]
+        '''
+        nCountRows = self.paramRowsCount()
+        paramall = []
+        iRowStep = 2
+        while iRowStep < nCountRows:
+            paramall.append(self.getOneLine(iRowStep))
+            iRowStep += 1
+        return paramall
+
+    def paramDataDict(self):
         '''
         获取全部参数，返回格式为字典
         :return: {{}},其中dict的key值是header的值
@@ -231,45 +282,51 @@ class XLS(Param):
         '''
         nCountRows = self.paramRowsCount()
         nCountCols = self.paramColsCount()
-        ParamAllListDict = {}
+        paramHeader = self.paramHeader()
+        paramAllLineDict = {}
         iRowStep = 2
         iColStep = 0
-        ParamHeader = self.paramHeader()
         while iRowStep < nCountRows:
-            ParamOneLinelist = self.getOneline(iRowStep)
-            ParamOnelineDict = {}
-            while iColStep < nCountCols:
-                ParamOnelineDict[ParamHeader[iColStep]
-                                 ] = ParamOneLinelist[iColStep]
-                iColStep = iColStep+1
-            iColStep = 0
-            ParamAllListDict[iRowStep-2] = ParamOnelineDict
-            iRowStep = iRowStep+1
-        return ParamAllListDict
+            paramOneLineList = self.getOneLine(iRowStep)
+            # paramOneLineDict = {}
+            # while iColStep < nCountCols:
+            #     paramOneLineDict[paramHeader[iColStep]] = paramOneLineList[iColStep]
+            #     iColStep += 1
+            # iColStep = 0
+            paramOneLineDict = dict(zip(paramHeader, paramOneLineList))
+            paramAllLineDict[iRowStep-2] = paramOneLineDict
+            iRowStep += 1
+        return paramAllLineDict
 
-    def paramAllline(self):
+    def paramDataListDict(self):
         '''
-        获取全部参数，返回格式为列表
-        :return: 全部参数[[]]
+        获取全部参数，返回格式为列表字典
+        :return: {{}},其中dict的key值是header的值
+
+        example:
+        [
+          {'equipmentid': 10001.0, 'exp': 'your pick up equipmentid:10001'}, 
+          {'equipmentid': 10002.0, 'exp': 'your pick up equipmentid:10002'}, 
+          {'equipmentid': 10003.0, 'exp': 'your pick up equipmentid:10003'}
+        ]        
         '''
         nCountRows = self.paramRowsCount()
-        paramall = []
+        nCountCols = self.paramColsCount()
+        paramHeader = self.paramHeader()
+        paramDataList = []
         iRowStep = 2
+        iColStep = 0
         while iRowStep < nCountRows:
-            paramall.append(self.getOneline(iRowStep))
-            iRowStep = iRowStep+1
-        return paramall
-
-    def __getParamCell(self, numberRow, numberCol):
-        return self.paramsheet.cell_value(numberRow, numberCol)
-
-
-class ParamFactory(object):
-    def chooseParam(self, type, paramConf):
-        map_ = {
-            'xls': XLS(paramConf)
-        }
-        return map_[type]
+            paramOneLineList = self.getOneLine(iRowStep)
+            # paramOneLineDict = {}
+            # while iColStep < nCountCols:
+            #     paramOneLineDict[paramHeader[iColStep]] = paramOneLineList[iColStep]
+            #     iColStep += 1
+            # iColStep = 0
+            paramOneLineDict = dict(zip(paramHeader, paramOneLineList))
+            paramDataList.append(paramOneLineDict)
+            iRowStep += 1
+        return paramDataList
 
 
 if __name__ == "__main__":
@@ -277,13 +334,11 @@ if __name__ == "__main__":
     uri_selectEq = '/selectEq'
     comm = Common('http://127.0.0.1:12306', api_type='http')
     # 武器编号变量存储武器编号，并且验证返回时是否有参数设计预期结果
-    # 获取当前路径绝对值
-    curPath = os.path.abspath('.')
     # 定义存储参数的excel文件路径
-    searchparamfile = curPath+'/meter/equipmentid_param.xls'
+    searchparamfile = './meter/equipmentid_param.xls'
     # 调用参数类完成参数读取，返回是一个字典，包含全部的excel数据除去excel的第一行表头说明
     searchparam_dict = ParamFactory().chooseParam(
-        'xls', {'file': searchparamfile, 'sheet': 0}).paramAlllineDict()
+        'xls', {'file': searchparamfile, 'sheet': 0}).paramDataDict()
     print(searchparam_dict)
     i = 0
     while i < len(searchparam_dict):
